@@ -3,6 +3,7 @@ const cors = require("cors");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const dotenv = require("dotenv");
+const { randomBytes } = require("node:crypto");
 
 const db = require("./database");
 
@@ -11,17 +12,10 @@ dotenv.config();
 const app = express();
 
 
-// ===============================
-// MIDDLEWARE
-// ===============================
-
 app.use(cors());
 app.use(express.json());
 
 
-// ===============================
-// JWT AUTHENTICATION MIDDLEWARE
-// ===============================
 
 function authenticateToken(req, res, next) {
 
@@ -50,10 +44,6 @@ function authenticateToken(req, res, next) {
 }
 
 
-// ===============================
-// HOME ROUTE
-// ===============================
-
 app.get("/", (req, res) => {
 
     res.json({
@@ -63,17 +53,10 @@ app.get("/", (req, res) => {
 });
 
 
-// ===============================
-// REGISTER
-// ===============================
-
 app.post("/register", async (req, res) => {
-
     try {
-
         const { name, email, password } = req.body;
 
-        // Basic validation
         if (!name || !email || !password) {
             return res.status(400).json({
                 message: "Name, email and password are required"
@@ -86,13 +69,10 @@ app.post("/register", async (req, res) => {
             });
         }
 
-
-        // Check if user already exists
         db.get(
             "SELECT id FROM users WHERE email = ?",
             [email],
             async (err, user) => {
-
                 if (err) {
                     return res.status(500).json({
                         message: "Database error"
@@ -105,49 +85,128 @@ app.post("/register", async (req, res) => {
                     });
                 }
 
+                try {
+                    const hashedPassword = await bcrypt.hash(
+                        password,
+                        10
+                    );
 
-                // Hash password
-                const hashedPassword = await bcrypt.hash(password, 10);
+                    const verificationToken =
+    randomBytes(32).toString("hex");
 
+                    const verificationTokenExpires =
+                        Date.now() + 15 * 60 * 1000;
 
-                // Insert user
-                db.run(
-                    `INSERT INTO users (name, email, password)
-                     VALUES (?, ?, ?)`,
-                    [name, email, hashedPassword],
-                    function (err) {
+                    db.run(
+                        `INSERT INTO users (
+                            name, email, password, isVerified,
+                            verificationToken, verificationTokenExpires
+                        ) VALUES (?, ?, ?, ?, ?, ?)`,
+                        [
+                            name,
+                            email,
+                            hashedPassword,
+                            0,
+                            verificationToken,
+                            verificationTokenExpires
+                        ],
+                        function (err) {
+                            if (err) {
+                                console.log("Registration error:", err.message);
 
-                        if (err) {
-                            return res.status(500).json({
-                                message: "Failed to create user"
+                                return res.status(500).json({
+                                    message: "Failed to create user"
+                                });
+                            }
+
+                            const verificationLink =
+                                `http://localhost:3000/verify-email?token=${verificationToken}`;
+
+                            console.log("EMAIL VERIFICATION LINK:");
+                            console.log(verificationLink);
+
+                            return res.status(201).json({
+                                message: "Registration successful. Verify your email.",
+                                userId: this.lastID
                             });
                         }
+                    );
+                } catch (error) {
+                    console.log("Registration error:", error.message);
 
-                        res.status(201).json({
-                            message: "User registered successfully",
-                            userId: this.lastID
-                        });
-
-                    }
-                );
-
+                    return res.status(500).json({
+                        message: "Server error"
+                    });
+                }
             }
         );
-
     } catch (error) {
+        console.log("Registration error:", error.message);
 
-        res.status(500).json({
+        return res.status(500).json({
             message: "Server error"
         });
-
     }
-
 });
 
+app.get("/verify-email", (req, res) => {
+    const { token } = req.query;
 
-// ===============================
-// LOGIN
-// ===============================
+    if (!token) {
+        return res.status(400).json({
+            message: "Verification token is required"
+        });
+    }
+
+    db.get(
+        `SELECT id, verificationTokenExpires
+         FROM users
+         WHERE verificationToken = ?`,
+        [token],
+        (err, user) => {
+            if (err) {
+                return res.status(500).json({
+                    message: "Database error"
+                });
+            }
+
+            if (!user) {
+                return res.status(400).json({
+                    message: "Invalid verification token"
+                });
+            }
+
+            if (
+                !user.verificationTokenExpires ||
+                Date.now() > user.verificationTokenExpires
+            ) {
+                return res.status(400).json({
+                    message: "Verification token has expired"
+                });
+            }
+
+            db.run(
+                `UPDATE users
+                 SET isVerified = 1,
+                     verificationToken = NULL,
+                     verificationTokenExpires = NULL
+                 WHERE id = ?`,
+                [user.id],
+                function (err) {
+                    if (err) {
+                        return res.status(500).json({
+                            message: "Failed to verify email"
+                        });
+                    }
+
+                    res.status(200).json({
+                        message: "Email verified successfully"
+                    });
+                }
+            );
+        }
+    );
+});
 
 app.post("/login", (req, res) => {
 
@@ -191,6 +250,13 @@ app.post("/login", (req, res) => {
                     message: "Invalid email or password"
                 });
             }
+            
+if (user.isVerified !== 1) {
+    return res.status(403).json({
+        message: "Please verify your email before logging in"
+    });
+}
+
 
 
             const token = jwt.sign(
@@ -220,10 +286,136 @@ app.post("/login", (req, res) => {
 
 });
 
-// ===============================
-// CREATE CATEGORY
-// ===============================
+app.post("/forgot-password", (req, res) => {
+    const { email } = req.body;
 
+    if (!email) {
+        return res.status(400).json({
+            message: "Email is required"
+        });
+    }
+
+    db.get(
+        "SELECT id FROM users WHERE email = ?",
+        [email],
+        (err, user) => {
+            if (err) {
+                return res.status(500).json({
+                    message: "Database error"
+                });
+            }
+            if (!user) {
+                return res.status(200).json({
+                    message: "If the account exists, a reset link has been generated"
+                });
+            }
+
+            const resetToken = randomBytes(32).toString("hex");
+            const resetTokenExpires = Date.now() + 15 * 60 * 1000;
+
+            db.run(
+                `UPDATE users
+                 SET resetToken = ?,
+                     resetTokenExpires = ?
+                 WHERE id = ?`,
+                [resetToken, resetTokenExpires, user.id],
+                function (err) {
+                    if (err) {
+                        return res.status(500).json({
+                            message: "Failed to generate reset token"
+                        });
+                    }
+
+                    const resetLink =
+                        `http://localhost:3000/reset-password?token=${resetToken}`;
+
+                    console.log("PASSWORD RESET LINK:");
+                    console.log(resetLink);
+
+                    return res.status(200).json({
+                        message: "If the account exists, a reset link has been generated"
+                    });
+                }
+            );
+        }
+    );
+});
+
+app.post("/reset-password", (req, res) => {
+    const { token, newPassword } = req.body;
+
+    if (!token || !newPassword) {
+        return res.status(400).json({
+            message: "Token and new password are required"
+        });
+    }
+
+    if (newPassword.length < 6) {
+        return res.status(400).json({
+            message: "Password must be at least 6 characters"
+        });
+    }
+
+    db.get(
+        `SELECT id, resetTokenExpires
+         FROM users
+         WHERE resetToken = ?`,
+        [token],
+        async (err, user) => {
+            if (err) {
+                return res.status(500).json({
+                    message: "Database error"
+                });
+            }
+
+            if (!user) {
+                return res.status(400).json({
+                    message: "Invalid reset token"
+                });
+            }
+
+            if (
+                !user.resetTokenExpires ||
+                Date.now() > user.resetTokenExpires
+            ) {
+                return res.status(400).json({
+                    message: "Reset token has expired"
+                });
+            }
+
+            try {
+                const hashedPassword = await bcrypt.hash(
+                    newPassword,
+                    10
+                );
+
+                db.run(
+                    `UPDATE users
+                     SET password = ?,
+                         resetToken = NULL,
+                         resetTokenExpires = NULL
+                     WHERE id = ?`,
+                    [hashedPassword, user.id],
+                    function (err) {
+                        if (err) {
+                            return res.status(500).json({
+                                message: "Failed to reset password"
+                            });
+                        }
+
+                        return res.status(200).json({
+                            message: "Password reset successful"
+                        });
+                    }
+                );
+            } catch (error) {
+                return res.status(500).json({
+                    message: "Server error"
+                });
+            }
+        }
+    );
+});
 app.post("/categories", authenticateToken, (req, res) => {
 
     console.log("CATEGORY BODY:", req.body);
@@ -259,10 +451,6 @@ app.post("/categories", authenticateToken, (req, res) => {
     );
 });
 
-// ===============================
-// GET ALL CATEGORIES
-// ===============================
-
 app.get("/categories", authenticateToken, (req, res) => {
 
     db.all(
@@ -282,10 +470,6 @@ app.get("/categories", authenticateToken, (req, res) => {
         }
     );
 });
-
-// ===============================
-// GET SINGLE CATEGORY
-// ===============================
 
 app.get("/categories/:id", authenticateToken, (req, res) => {
 
@@ -311,10 +495,6 @@ app.get("/categories/:id", authenticateToken, (req, res) => {
         }
     );
 });
-
-// ===============================
-// UPDATE CATEGORY
-// ===============================
 
 app.put("/categories/:id", authenticateToken, (req, res) => {
 
@@ -352,10 +532,6 @@ app.put("/categories/:id", authenticateToken, (req, res) => {
     );
 });
 
-// ===============================
-// DELETE CATEGORY
-// ===============================
-
 app.delete("/categories/:id", authenticateToken, (req, res) => {
 
     db.run(
@@ -383,10 +559,6 @@ app.delete("/categories/:id", authenticateToken, (req, res) => {
     );
 });
 
-// ===============================
-// CREATE EXPENSE
-// ===============================
-
 app.post("/expenses", authenticateToken, (req, res) => {
 
     const {
@@ -397,7 +569,6 @@ app.post("/expenses", authenticateToken, (req, res) => {
         description
     } = req.body;
 
-    // Basic validation
     if (!title || amount === undefined || !categoryId || !date) {
         return res.status(400).json({
             message: "Title, amount, categoryId and date are required"
@@ -409,8 +580,6 @@ app.post("/expenses", authenticateToken, (req, res) => {
             message: "Amount must be greater than 0"
         });
     }
-
-    // Check category belongs to logged-in user
     db.get(
         `SELECT id FROM categories
          WHERE id = ? AND userId = ?`,
@@ -469,9 +638,6 @@ app.post("/expenses", authenticateToken, (req, res) => {
     );
 });
 
-// ===============================
-// GET ALL EXPENSES
-// ===============================
 
 app.get("/expenses", authenticateToken, (req, res) => {
 
@@ -502,9 +668,6 @@ app.get("/expenses", authenticateToken, (req, res) => {
         }
     );
 });
-// ===============================
-// GET SINGLE EXPENSE
-// ===============================
 
 app.get("/expenses/:id", authenticateToken, (req, res) => {
 
@@ -541,9 +704,7 @@ app.get("/expenses/:id", authenticateToken, (req, res) => {
         }
     );
 });
-// ===============================
-// UPDATE EXPENSE
-// ===============================
+
 
 app.put("/expenses/:id", authenticateToken, (req, res) => {
 
@@ -628,9 +789,6 @@ app.put("/expenses/:id", authenticateToken, (req, res) => {
     );
 });
 
-// ===============================
-// DELETE EXPENSE
-// ===============================
 
 app.delete("/expenses/:id", authenticateToken, (req, res) => {
 
@@ -660,9 +818,7 @@ app.delete("/expenses/:id", authenticateToken, (req, res) => {
         }
     );
 });
-// ===============================
-// SERVER
-// ===============================
+
 
 const PORT = process.env.PORT || 3000;
 
