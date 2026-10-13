@@ -9,13 +9,37 @@ const db = new sqlite3.Database("./database.db", (err) => {
 });
 
 
-// Enable foreign key support
 db.run("PRAGMA foreign_keys = ON");
 
+function addColumnIfNotExists(columnName, columnDefinition) {
+    db.all("PRAGMA table_info(users)", (err, columns) => {
+        if (err) {
+            console.log("Could not check users table:", err.message);
+            return;
+        }
 
-// ===============================
-// USERS TABLE
-// ===============================
+        const exists = columns.some(
+            (column) => column.name === columnName
+        );
+
+        if (!exists) {
+            db.run(
+                `ALTER TABLE users ADD COLUMN ${columnName} ${columnDefinition}`,
+                (err) => {
+                    if (err) {
+                        console.log(
+                            `Error adding ${columnName}:`,
+                            err.message
+                        );
+                    } else {
+                        console.log(`${columnName} column added`);
+                    }
+                }
+            );
+        }
+    });
+}
+
 db.run(`
     CREATE TABLE IF NOT EXISTS users (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -31,10 +55,12 @@ db.run(`
     }
 });
 
+addColumnIfNotExists("isVerified", "INTEGER NOT NULL DEFAULT 1");
+addColumnIfNotExists("verificationToken", "TEXT");
+addColumnIfNotExists("verificationTokenExpires", "INTEGER");
+addColumnIfNotExists("resetToken", "TEXT");
+addColumnIfNotExists("resetTokenExpires", "INTEGER");
 
-// ===============================
-// CATEGORIES TABLE
-// ===============================
 db.run(`
     CREATE TABLE IF NOT EXISTS categories (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -50,10 +76,6 @@ db.run(`
     }
 });
 
-
-// ===============================
-// EXPENSES TABLE
-// ===============================
 db.run(`
     CREATE TABLE IF NOT EXISTS expenses (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
