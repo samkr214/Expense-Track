@@ -1,3 +1,4 @@
+
 const sqlite3 = require("sqlite3").verbose();
 
 const db = new sqlite3.Database("./database.db", (err) => {
@@ -7,7 +8,6 @@ const db = new sqlite3.Database("./database.db", (err) => {
         console.log("Database connected successfully");
     }
 });
-
 
 // Enable foreign key support
 db.run("PRAGMA foreign_keys = ON");
@@ -41,7 +41,6 @@ function addColumnIfNotExists(columnName, columnDefinition) {
     });
 }
 
-
 // ===============================
 // USERS TABLE
 // ===============================
@@ -66,7 +65,6 @@ addColumnIfNotExists("verificationTokenExpires", "INTEGER");
 addColumnIfNotExists("resetToken", "TEXT");
 addColumnIfNotExists("resetTokenExpires", "INTEGER");
 
-
 // ===============================
 // CATEGORIES TABLE
 // ===============================
@@ -84,7 +82,6 @@ db.run(`
         console.log("Categories table ready");
     }
 });
-
 
 // ===============================
 // EXPENSES TABLE
@@ -109,6 +106,5 @@ db.run(`
         console.log("Expenses table ready");
     }
 });
-
 
 module.exports = db;

@@ -1,13 +1,14 @@
+
 {
   "name": "expense-track-backend",
   "version": "1.0.0",
   "description": "Backend API for ExpenseTrack",
   "main": "server.js",
-"scripts": {
-  "start": "node server.js",
-  "test": "jest --runInBand",
-  "coverage": "jest --coverage --runInBand"
-},
+  "scripts": {
+    "start": "node server.js",
+    "test": "jest --runInBand",
+    "coverage": "jest --coverage --runInBand"
+  },
   "dependencies": {
     "bcryptjs": "^3.0.2",
     "cors": "^2.8.5",
