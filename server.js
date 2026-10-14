@@ -880,10 +880,19 @@ app.delete("/expenses/:id", authenticateToken, (req, res) => {
 // SERVER
 // ===============================
 
-const PORT = process.env.PORT ||3000;
+// const PORT = process.env.PORT ||3000;
 
-app.listen(PORT, "0.0.0.0", () => {
+// app.listen(PORT, "0.0.0.0", () => {
 
-    console.log(`ExpenseTrack API running on port ${PORT}`);
+//     console.log(`ExpenseTrack API running on port ${PORT}`);
 
-});
+// });
+const PORT = process.env.PORT || 3000;
+
+if (require.main === module) {
+    app.listen(PORT, "0.0.0.0", () => {
+        console.log(`ExpenseTrack API running on port ${PORT}`);
+    });
+}
+
+module.exports = app;
