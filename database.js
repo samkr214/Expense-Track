@@ -59,30 +59,31 @@ db.run(`
     }
 });
 
-addColumnIfNotExists("isVerified", "INTEGER NOT NULL DEFAULT 1");
-addColumnIfNotExists("verificationToken", "TEXT");
-addColumnIfNotExists("verificationTokenExpires", "INTEGER");
-addColumnIfNotExists("resetToken", "TEXT");
-addColumnIfNotExists("resetTokenExpires", "INTEGER");
 
 // ===============================
 // CATEGORIES TABLE
 // ===============================
 db.run(`
-    CREATE TABLE IF NOT EXISTS categories (
+    CREATE TABLE IF NOT EXISTS users (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         name TEXT NOT NULL,
-        userId INTEGER NOT NULL,
-        FOREIGN KEY (userId) REFERENCES users(id) ON DELETE CASCADE
+        email TEXT UNIQUE NOT NULL,
+        password TEXT NOT NULL
     )
 `, (err) => {
     if (err) {
-        console.log("Categories table creation error:", err.message);
-    } else {
-        console.log("Categories table ready");
+        console.log("Users table creation error:", err.message);
+        return;
     }
-});
 
+    console.log("Users table ready");
+
+    addColumnIfNotExists("isVerified", "INTEGER NOT NULL DEFAULT 1");
+    addColumnIfNotExists("verificationToken", "TEXT");
+    addColumnIfNotExists("verificationTokenExpires", "INTEGER");
+    addColumnIfNotExists("resetToken", "TEXT");
+    addColumnIfNotExists("resetTokenExpires", "INTEGER");
+});
 // ===============================
 // EXPENSES TABLE
 // ===============================
