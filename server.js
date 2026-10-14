@@ -78,11 +78,13 @@ app.post("/register", async (req, res) => {
             "SELECT id FROM users WHERE email = ?",
             [email],
             async (err, user) => {
-                if (err) {
-                    return res.status(500).json({
-                        message: "Database error"
-                    });
-                }
+if (err) {
+    console.error("FETCH EXPENSES ERROR:", err.message);
+
+    return res.status(500).json({
+        message: "Failed to fetch expenses"
+    });
+}
 
                 if (user) {
                     return res.status(400).json({
