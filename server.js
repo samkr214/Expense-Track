@@ -107,7 +107,7 @@ app.post("/register", async (req, res) => {
                     );
 
                     const verificationToken =
-    randomBytes(32).toString("hex");
+                        randomBytes(32).toString("hex");
 
                     const verificationTokenExpires =
                         Date.now() + 15 * 60 * 1000;
@@ -135,9 +135,10 @@ app.post("/register", async (req, res) => {
                             }
 
                             const verificationLink =
-                                `http://localhost:3000/verify-email?token=${verificationToken}`;
+                                `http://localhost:5174/verify-email?token=${verificationToken}`;
 
                             console.log("EMAIL VERIFICATION LINK:");
+                            console.log("Generated token:", verificationToken);
                             console.log(verificationLink);
 
                             return res.status(201).json({
@@ -179,6 +180,8 @@ app.get("/verify-email", (req, res) => {
          WHERE verificationToken = ?`,
         [token],
         (err, user) => {
+            console.log("VERIFY TOKEN RECEIVED:", token);
+console.log("VERIFY USER FOUND:", user);
             if (err) {
                 return res.status(500).json({
                     message: "Database error"
@@ -189,8 +192,7 @@ app.get("/verify-email", (req, res) => {
                 return res.status(400).json({
                     message: "Invalid verification token"
                 });
-            }
-
+           }
             if (
                 !user.verificationTokenExpires ||
                 Date.now() > user.verificationTokenExpires
@@ -199,7 +201,8 @@ app.get("/verify-email", (req, res) => {
                     message: "Verification token has expired"
                 });
             }
-
+//   console.log("VERIFY TOKEN RECEIVED:", token);
+// console.log("VERIFY USER FOUND:", user);
             db.run(
                 `UPDATE users
                  SET isVerified = 1,
@@ -208,6 +211,10 @@ app.get("/verify-email", (req, res) => {
                  WHERE id = ?`,
                 [user.id],
                 function (err) {
+                    console.log("VERIFY UPDATE RESULT:", {
+    error: err?.message,
+    changes: this.changes
+});
                     if (err) {
                         return res.status(500).json({
                             message: "Failed to verify email"
@@ -229,8 +236,8 @@ app.get("/verify-email", (req, res) => {
 // ===============================
 
 app.post("/login", (req, res) => {
-
     const { email, password } = req.body;
+    console.log("LOGIN ROUTE HIT");
 
 
     if (!email || !password) {
@@ -270,12 +277,13 @@ app.post("/login", (req, res) => {
                     message: "Invalid email or password"
                 });
             }
-            
-if (user.isVerified !== 1) {
-    return res.status(403).json({
-        message: "Please verify your email before logging in"
-    });
-}
+
+            if (Number(user.isVerified) !== 1) {
+                return res.status(403).json({
+                    message: "Please verify your email before logging in"
+                });
+            }
+
 
 
 
@@ -300,8 +308,7 @@ if (user.isVerified !== 1) {
                     email: user.email
                 }
             });
-
-        }
+        }       
     );
 
 });
@@ -349,7 +356,7 @@ app.post("/forgot-password", (req, res) => {
                     }
 
                     const resetLink =
-                        `http://localhost:3000/reset-password?token=${resetToken}`;
+                        `http://localhost:5174/reset-password?token=${resetToken}`;
 
                     console.log("PASSWORD RESET LINK:");
                     console.log(resetLink);
@@ -883,7 +890,7 @@ app.delete("/expenses/:id", authenticateToken, (req, res) => {
 // SERVER
 // ===============================
 
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT ||3000;
 
 app.listen(PORT, "0.0.0.0", () => {
 
