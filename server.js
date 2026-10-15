@@ -78,11 +78,13 @@ app.post("/register", async (req, res) => {
             "SELECT id FROM users WHERE email = ?",
             [email],
             async (err, user) => {
-                if (err) {
-                    return res.status(500).json({
-                        message: "Database error"
-                    });
-                }
+if (err) {
+    console.error("FETCH EXPENSES ERROR:", err.message);
+
+    return res.status(500).json({
+        message: "Failed to fetch expenses"
+    });
+}
 
                 if (user) {
                     return res.status(400).json({
@@ -125,7 +127,7 @@ app.post("/register", async (req, res) => {
                             }
 
                             const verificationLink =
-                                `http://localhost:5174/verify-email?token=${verificationToken}`;
+    `https://expense-track-frontend-omega.vercel.app/verify-email?token=${verificationToken}`;
 
                             console.log("EMAIL VERIFICATION LINK:");
                             console.log("Generated token:", verificationToken);
@@ -346,8 +348,8 @@ app.post("/forgot-password", (req, res) => {
                         });
                     }
 
-                    const resetLink =
-                        `http://localhost:5174/reset-password?token=${resetToken}`;
+                   const resetLink =
+    `https://expense-track-frontend-omega.vercel.app/reset-password?token=${resetToken}`;
 
                     console.log("PASSWORD RESET LINK:");
                     console.log(resetLink);

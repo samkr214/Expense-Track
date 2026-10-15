@@ -8,6 +8,8 @@ const db = new sqlite3.Database("./database.db", (err) => {
         console.log("Database connected successfully");
     }
 });
+
+// Enable foreign key support
 db.run("PRAGMA foreign_keys = ON");
 
 function addColumnIfNotExists(columnName, columnDefinition) {
@@ -39,6 +41,9 @@ function addColumnIfNotExists(columnName, columnDefinition) {
     });
 }
 
+// ===============================
+// USERS TABLE
+// ===============================
 db.run(`
     CREATE TABLE IF NOT EXISTS users (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -61,9 +66,9 @@ db.run(`
     addColumnIfNotExists("resetTokenExpires", "INTEGER");
 });
 
- // ===============================
- // CATEGORIES TABLE
- // ===============================
+// ===============================
+// CATEGORIES TABLE
+// ===============================
 db.run(`
     CREATE TABLE IF NOT EXISTS categories (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
