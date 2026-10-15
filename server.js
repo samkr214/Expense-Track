@@ -6,7 +6,7 @@ const dotenv = require("dotenv");
 const { randomBytes } = require("node:crypto");
 // const nodemailer = require("nodemailer");
 const db = require("./database");
-const { Resend } = require("resend");
+    // const { Resend } = require("resend");
 
 dotenv.config();
 
@@ -204,62 +204,62 @@ if (err) {
 //         });
 //     }
 
-    db.get(
-        `SELECT id, verificationTokenExpires
-         FROM users
-         WHERE verificationToken = ?`,
-        [token],
-        (err, user) => {
-            console.log("VERIFY TOKEN RECEIVED:", token);
-            console.log("VERIFY USER FOUND:", user);
-            if (err) {
-                return res.status(500).json({
-                    message: "Database error"
-                });
-            }
+//     db.get(
+//         `SELECT id, verificationTokenExpires
+//          FROM users
+//          WHERE verificationToken = ?`,
+//         [token],
+//         (err, user) => {
+//             console.log("VERIFY TOKEN RECEIVED:", token);
+//             console.log("VERIFY USER FOUND:", user);
+//             if (err) {
+//                 return res.status(500).json({
+//                     message: "Database error"
+//                 });
+//             }
 
-            if (!user) {
-                return res.status(400).json({
-                    message: "Invalid verification token"
-                });
-            }
-            if (
-                !user.verificationTokenExpires ||
-                Date.now() > user.verificationTokenExpires
-            ) {
-                return res.status(400).json({
-                    message: "Verification token has expired"
-                });
-            }
-            //   console.log("VERIFY TOKEN RECEIVED:", token);
-            // console.log("VERIFY USER FOUND:", user);
-            db.run(
-                `UPDATE users
-                 SET isVerified = 1,
-                     verificationToken = NULL,
-                     verificationTokenExpires = NULL
-                 WHERE id = ?`,
-                [user.id],
-                function (err) {
-                    console.log("VERIFY UPDATE RESULT:", {
-                        error: err?.message,
-                        changes: this.changes
-                    });
-if (err) {
-    console.error("VERIFY UPDATE ERROR:", err.message);
+//             if (!user) {
+//                 return res.status(400).json({
+//                     message: "Invalid verification token"
+//                 });
+//             }
+//             if (
+//                 !user.verificationTokenExpires ||
+//                 Date.now() > user.verificationTokenExpires
+//             ) {
+//                 return res.status(400).json({
+//                     message: "Verification token has expired"
+//                 });
+//             }
+//             //   console.log("VERIFY TOKEN RECEIVED:", token);
+//             // console.log("VERIFY USER FOUND:", user);
+//             db.run(
+//                 `UPDATE users
+//                  SET isVerified = 1,
+//                      verificationToken = NULL,
+//                      verificationTokenExpires = NULL
+//                  WHERE id = ?`,
+//                 [user.id],
+//                 function (err) {
+//                     console.log("VERIFY UPDATE RESULT:", {
+//                         error: err?.message,
+//                         changes: this.changes
+//                     });
+// if (err) {
+//     console.error("VERIFY UPDATE ERROR:", err.message);
 
-    return res.status(500).json({
-        message: "Email verification failed"
-    });
-}
-                    res.status(200).json({
-                        message: "Email verified successfully"
-                    });
-                }
-            );
-        }
-    );
-});
+//     return res.status(500).json({
+//         message: "Email verification failed"
+//     });
+// }
+//                     res.status(200).json({
+//                         message: "Email verified successfully"
+//                     });
+//                 }
+//             );
+//         }
+//     );
+// });
 
 
 // ===============================
