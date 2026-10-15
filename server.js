@@ -113,10 +113,14 @@ if (err) {
                         [
                             name,
                             email,
+                            // hashedPassword,
+                            // 0,
+                            // verificationToken,
+                            // verificationTokenExpires
                             hashedPassword,
-                            0,
-                            verificationToken,
-                            verificationTokenExpires
+                            1,
+                            null,
+                            null
                         ],
                        async function (err) {
     if (err) {
@@ -127,41 +131,41 @@ if (err) {
                                 });
                             }
 
-const verificationLink =
-    `https://expense-track-frontend-omega.vercel.app/verify-email?token=${verificationToken}`;
+// const verificationLink =
+//     `https://expense-track-frontend-omega.vercel.app/verify-email?token=${verificationToken}`;
 
 
-try {
-    const { data, error } = await resend.emails.send({
-        from: "ExpenseTrack <onboarding@resend.dev>",
-        to: [email],
-        subject: "Verify your ExpenseTrack account",
-        html: `
-            <h2>Welcome to ExpenseTrack!</h2>
-            <p>Please verify your email address by clicking the link below:</p>
-            <a href="${verificationLink}">Verify Email</a>
-            <p>If you did not create this account, you can ignore this email.</p>
-        `
-    });
+// try {
+//     const { data, error } = await resend.emails.send({
+//         from: "ExpenseTrack <onboarding@resend.dev>",
+//         to: [email],
+//         subject: "Verify your ExpenseTrack account",
+//         html: `
+//             <h2>Welcome to ExpenseTrack!</h2>
+//             <p>Please verify your email address by clicking the link below:</p>
+//             <a href="${verificationLink}">Verify Email</a>
+//             <p>If you did not create this account, you can ignore this email.</p>
+//         `
+//     });
 
-    if (error) {
-        console.error("Resend email failed:", error);
-        return res.status(500).json({
-            message: "Account created, but verification email could not be sent."
-        });
-    }
+//     if (error) {
+//         console.error("Resend email failed:", error);
+//         return res.status(500).json({
+//             message: "Account created, but verification email could not be sent."
+//         });
+//     }
 
-    console.log("Verification email sent successfully:", data.id);
-} catch (error) {
-    console.error("Resend email sending failed:", error.message);
+//     console.log("Verification email sent successfully:", data.id);
+// } catch (error) {
+//     console.error("Resend email sending failed:", error.message);
 
-    return res.status(500).json({
-        message: "Account created, but verification email could not be sent."
-    });
-}
+//     return res.status(500).json({
+//         message: "Account created, but verification email could not be sent."
+//     });
+// }
 
                             return res.status(201).json({
-                                message: "Registration successful. Verify your email.",
+                                message: "Registration successful.",
                                 userId: this.lastID
                             });
                         }
@@ -183,13 +187,13 @@ try {
         });
     }
 });
-// const transporter = nodemailer.createTransport({
-//     service: "gmail",
-//     auth: {
-//         user: process.env.EMAIL_USER,
-//         pass: process.env.EMAIL_APP_PASSWORD
-//     }
-// });
+const transporter = nodemailer.createTransport({
+    service: "gmail",
+    auth: {
+        user: process.env.EMAIL_USER,
+        pass: process.env.EMAIL_APP_PASSWORD
+    }
+});
 const resend = new Resend(process.env.RESEND_API_KEY);
 app.get("/verify-email", (req, res) => {
     const { token } = req.query;
@@ -305,11 +309,11 @@ app.post("/login", (req, res) => {
                 });
             }
 
-            if (Number(user.isVerified) !== 1) {
-                return res.status(403).json({
-                    message: "Please verify your email before logging in"
-                });
-            }
+            // if (Number(user.isVerified) !== 1) {
+            //     return res.status(403).json({
+            //         message: "Please verify your email before logging in"
+            //     });
+            // }
 
 
 
