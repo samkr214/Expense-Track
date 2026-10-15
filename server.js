@@ -4,8 +4,9 @@ const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const dotenv = require("dotenv");
 const { randomBytes } = require("node:crypto");
-const nodemailer = require("nodemailer");
+// const nodemailer = require("nodemailer");
 const db = require("./database");
+const { Resend } = require("resend");
 
 dotenv.config();
 
@@ -131,9 +132,9 @@ const verificationLink =
 
 
 try {
-    await transporter.sendMail({
-        from: `"ExpenseTrack" <${process.env.EMAIL_USER}>`,
-        to: email,
+    const { data, error } = await resend.emails.send({
+        from: "ExpenseTrack <onboarding@resend.dev>",
+        to: [email],
         subject: "Verify your ExpenseTrack account",
         html: `
             <h2>Welcome to ExpenseTrack!</h2>
@@ -143,15 +144,21 @@ try {
         `
     });
 
-    console.log("Verification email sent successfully");
+    if (error) {
+        console.error("Resend email failed:", error);
+        return res.status(500).json({
+            message: "Account created, but verification email could not be sent."
+        });
+    }
+
+    console.log("Verification email sent successfully:", data.id);
 } catch (error) {
-    console.error("Verification email sending failed:", error.message);
+    console.error("Resend email sending failed:", error.message);
 
     return res.status(500).json({
         message: "Account created, but verification email could not be sent."
     });
 }
-
 
                             return res.status(201).json({
                                 message: "Registration successful. Verify your email.",
@@ -176,13 +183,14 @@ try {
         });
     }
 });
-const transporter = nodemailer.createTransport({
-    service: "gmail",
-    auth: {
-        user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_APP_PASSWORD
-    }
-});
+// const transporter = nodemailer.createTransport({
+//     service: "gmail",
+//     auth: {
+//         user: process.env.EMAIL_USER,
+//         pass: process.env.EMAIL_APP_PASSWORD
+//     }
+// });
+const resend = new Resend(process.env.RESEND_API_KEY);
 app.get("/verify-email", (req, res) => {
     const { token } = req.query;
 
