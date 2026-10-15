@@ -171,7 +171,7 @@ app.get("/verify-email", (req, res) => {
         [token],
         (err, user) => {
             console.log("VERIFY TOKEN RECEIVED:", token);
-console.log("VERIFY USER FOUND:", user);
+            console.log("VERIFY USER FOUND:", user);
             if (err) {
                 return res.status(500).json({
                     message: "Database error"
@@ -182,7 +182,7 @@ console.log("VERIFY USER FOUND:", user);
                 return res.status(400).json({
                     message: "Invalid verification token"
                 });
-           }
+            }
             if (
                 !user.verificationTokenExpires ||
                 Date.now() > user.verificationTokenExpires
@@ -191,8 +191,8 @@ console.log("VERIFY USER FOUND:", user);
                     message: "Verification token has expired"
                 });
             }
-//   console.log("VERIFY TOKEN RECEIVED:", token);
-// console.log("VERIFY USER FOUND:", user);
+            //   console.log("VERIFY TOKEN RECEIVED:", token);
+            // console.log("VERIFY USER FOUND:", user);
             db.run(
                 `UPDATE users
                  SET isVerified = 1,
@@ -202,15 +202,16 @@ console.log("VERIFY USER FOUND:", user);
                 [user.id],
                 function (err) {
                     console.log("VERIFY UPDATE RESULT:", {
-    error: err?.message,
-    changes: this.changes
-});
-                    if (err) {
-                        return res.status(500).json({
-                            message: "Failed to verify email"
-                        });
-                    }
+                        error: err?.message,
+                        changes: this.changes
+                    });
+if (err) {
+    console.error("VERIFY UPDATE ERROR:", err.message);
 
+    return res.status(500).json({
+        message: "Email verification failed"
+    });
+}
                     res.status(200).json({
                         message: "Email verified successfully"
                     });
@@ -298,7 +299,7 @@ app.post("/login", (req, res) => {
                     email: user.email
                 }
             });
-        }       
+        }
     );
 
 });
@@ -488,11 +489,13 @@ app.get("/categories", authenticateToken, (req, res) => {
         [req.user.id],
         (err, categories) => {
 
-            if (err) {
-                return res.status(500).json({
-                    message: "Failed to fetch categories"
-                });
-            }
+if (err) {
+    console.error("FETCH CATEGORIES ERROR:", err.message);
+
+    return res.status(500).json({
+        message: "Failed to fetch categories"
+    });
+}
 
             res.status(200).json(categories);
         }
@@ -708,12 +711,13 @@ app.get("/expenses", authenticateToken, (req, res) => {
         [req.user.id],
         (err, expenses) => {
 
-            if (err) {
-                return res.status(500).json({
-                    message: "Failed to fetch expenses"
-                });
-            }
+if (err) {
+    console.error("FETCH EXPENSES ERROR:", err.message);
 
+    return res.status(500).json({
+        message: "Failed to fetch expenses"
+    });
+}
             res.status(200).json(expenses);
         }
     );

@@ -8,8 +8,6 @@ const db = new sqlite3.Database("./database.db", (err) => {
         console.log("Database connected successfully");
     }
 });
-
-// Enable foreign key support
 db.run("PRAGMA foreign_keys = ON");
 
 function addColumnIfNotExists(columnName, columnDefinition) {
@@ -41,9 +39,6 @@ function addColumnIfNotExists(columnName, columnDefinition) {
     });
 }
 
-// ===============================
-// USERS TABLE
-// ===============================
 db.run(`
     CREATE TABLE IF NOT EXISTS users (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -54,20 +49,21 @@ db.run(`
 `, (err) => {
     if (err) {
         console.log("Users table creation error:", err.message);
-    } else {
-        console.log("Users table ready");
+        return;
     }
+
+    console.log("Users table ready");
+
+    addColumnIfNotExists("isVerified", "INTEGER NOT NULL DEFAULT 1");
+    addColumnIfNotExists("verificationToken", "TEXT");
+    addColumnIfNotExists("verificationTokenExpires", "INTEGER");
+    addColumnIfNotExists("resetToken", "TEXT");
+    addColumnIfNotExists("resetTokenExpires", "INTEGER");
 });
 
-addColumnIfNotExists("isVerified", "INTEGER NOT NULL DEFAULT 1");
-addColumnIfNotExists("verificationToken", "TEXT");
-addColumnIfNotExists("verificationTokenExpires", "INTEGER");
-addColumnIfNotExists("resetToken", "TEXT");
-addColumnIfNotExists("resetTokenExpires", "INTEGER");
-
-// ===============================
-// CATEGORIES TABLE
-// ===============================
+ // ===============================
+ // CATEGORIES TABLE
+ // ===============================
 db.run(`
     CREATE TABLE IF NOT EXISTS categories (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
