@@ -4,7 +4,7 @@ const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const dotenv = require("dotenv");
 const { randomBytes } = require("node:crypto");
-
+const nodemailer = require("nodemailer");
 const db = require("./database");
 
 dotenv.config();
@@ -117,21 +117,41 @@ if (err) {
                             verificationToken,
                             verificationTokenExpires
                         ],
-                        function (err) {
-                            if (err) {
-                                console.log("Registration error:", err.message);
+                       async function (err) {
+    if (err) {
+        console.log("Registration error:", err.message);
 
                                 return res.status(500).json({
                                     message: "Failed to create user"
                                 });
                             }
 
-                            const verificationLink =
+const verificationLink =
     `https://expense-track-frontend-omega.vercel.app/verify-email?token=${verificationToken}`;
 
-                            console.log("EMAIL VERIFICATION LINK:");
-                            console.log("Generated token:", verificationToken);
-                            console.log(verificationLink);
+
+try {
+    await transporter.sendMail({
+        from: `"ExpenseTrack" <${process.env.EMAIL_USER}>`,
+        to: email,
+        subject: "Verify your ExpenseTrack account",
+        html: `
+            <h2>Welcome to ExpenseTrack!</h2>
+            <p>Please verify your email address by clicking the link below:</p>
+            <a href="${verificationLink}">Verify Email</a>
+            <p>If you did not create this account, you can ignore this email.</p>
+        `
+    });
+
+    console.log("Verification email sent successfully");
+} catch (error) {
+    console.error("Verification email sending failed:", error.message);
+
+    return res.status(500).json({
+        message: "Account created, but verification email could not be sent."
+    });
+}
+
 
                             return res.status(201).json({
                                 message: "Registration successful. Verify your email.",
@@ -156,7 +176,13 @@ if (err) {
         });
     }
 });
-
+const transporter = nodemailer.createTransport({
+    service: "gmail",
+    auth: {
+        user: process.env.EMAIL_USER,
+        pass: process.env.EMAIL_APP_PASSWORD
+    }
+});
 app.get("/verify-email", (req, res) => {
     const { token } = req.query;
 
