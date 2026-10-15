@@ -187,22 +187,22 @@ if (err) {
         });
     }
 });
-const transporter = nodemailer.createTransport({
-    service: "gmail",
-    auth: {
-        user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_APP_PASSWORD
-    }
-});
-const resend = new Resend(process.env.RESEND_API_KEY);
-app.get("/verify-email", (req, res) => {
-    const { token } = req.query;
+// const transporter = nodemailer.createTransport({
+//     service: "gmail",
+//     auth: {
+//         user: process.env.EMAIL_USER,
+//         pass: process.env.EMAIL_APP_PASSWORD
+//     }
+// });
+// const resend = new Resend(process.env.RESEND_API_KEY);
+// app.get("/verify-email", (req, res) => {
+//     const { token } = req.query;
 
-    if (!token) {
-        return res.status(400).json({
-            message: "Verification token is required"
-        });
-    }
+//     if (!token) {
+//         return res.status(400).json({
+//             message: "Verification token is required"
+//         });
+//     }
 
     db.get(
         `SELECT id, verificationTokenExpires
